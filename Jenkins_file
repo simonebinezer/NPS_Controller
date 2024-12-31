@@ -17,29 +17,6 @@ pipeline {
             }
         }
 
-        stage('Setup PHP Environment') {
-    steps {
-        script {
-            echo "Setting up PHP environment..."
-            if (isUnix()) {
-                // Check and install PHP for Unix
-                sh '''
-                if ! command -v php &> /dev/null
-                then
-                    echo "PHP not found, attempting to install..."
-                    apt-get update && apt-get install php -y || echo "Failed to install PHP, please install it manually."
-                fi
-                '''
-            } else {
-                // Handle PHP for Windows
-                bat '''
-                php --version || echo "Please ensure PHP is installed and added to PATH on your Windows system."
-                '''
-            }
-        }
-    }
-}
-
         stage('Build & SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') { // Matches the SonarQube instance name in Jenkins
