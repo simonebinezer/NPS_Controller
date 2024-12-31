@@ -13,7 +13,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 echo "Cloning the GitHub repository..."
-                git branch: 'main', url: ''
+                git branch: 'main', url: 'https://github.com/simonebinezer/NPS_Controller.git'
             }
         }
 
@@ -36,7 +36,7 @@ pipeline {
                     echo "Starting SonarQube analysis..."
                     bat """
                         sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
-                                      -Dsonar.projectName="CSAT_Code" \
+                                      -Dsonar.projectName="NPS_Controller" \
                                       -Dsonar.projectVersion="1.0" \
                                       -Dsonar.sources=. \
                                       -Dsonar.host.url="${SONAR_HOST_URL}" \
@@ -48,7 +48,7 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 60, unit: 'MINUTES') {
+                timeout(time: 10, unit: 'MINUTES') {
                     script {
                         echo "Checking SonarQube Quality Gate status..."
                         def qg = waitForQualityGate()
@@ -68,7 +68,7 @@ pipeline {
         stage('Save to Local Folder') {
             steps {
                 script {
-                    def localFolder = '/path/to/your/local/folder' // Replace with your desired local folder path
+                    def localFolder = 'C:\NPS_Controller' // Replace with your desired local folder path
                     echo "Saving repository files to local folder: ${localFolder}..."
                     if (isUnix()) {
                         sh "mkdir -p ${localFolder} && cp -r * ${localFolder}"
