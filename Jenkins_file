@@ -36,23 +36,27 @@ pipeline {
         }
 
         stage('Quality Gate') {
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    script {
-                        echo "Checking SonarQube Quality Gate status..."
-                        def qg = waitForQualityGate()
-                        while (qg.status == 'IN_PROGRESS') {
-                            echo "SonarQube Quality Gate still in progress..."
-                            sleep(30) // Wait 30 seconds before retrying
-                            qg = waitForQualityGate() // Recheck the status
-                        }
-                        if (qg.status != 'OK') {
-                            error "Pipeline failed due to quality gate failure: ${qg.status}"
-                        }
-                    }
+    steps {
+        timeout(time: 20, unit: 'MINUTES') {
+            script {
+                echo "Checking SonarQube Quality Gate status..."
+                def qg = waitForQualityGate()
+                
+                while (qg.status == 'IN_PROGRESS' || qg.status == 'PENDING') {
+                    echo "SonarQube Quality Gate still in progress or pending... Current status: ${qg.status}"
+                    sleep(30) // Wait 30 seconds before retrying
+                    qg = waitForQualityGate() // Recheck the status
+                }
+
+                if (qg.status != 'OK') {
+                    error "Pipeline failed due to quality gate failure: ${qg.status}"
+                } else {
+                    echo "SonarQube Quality Gate passed with status: ${qg.status}"
                 }
             }
         }
+    }
+}
 
         stage('Save to Local Folder') {
             steps {
