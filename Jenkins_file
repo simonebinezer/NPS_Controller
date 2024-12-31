@@ -1,0 +1,85 @@
+pipeline {
+    agent any
+
+    environment {
+        SONARQUBE_SCANNER_HOME = tool name: 'SonarQube_Scanner' // Matches the configured scanner tool in Jenkins
+        SONAR_PROJECT_KEY = 'NPS_Controller'                // Unique identifier for the project
+        GITHUB_REPO = 'https://github.com/simonebinezer/CSAT'
+        SONAR_HOST_URL = 'http://localhost:9099'          // SonarQube server address
+        SONAR_TOKEN = credentials('CSAT_Code')         // Jenkins credentials storing the SonarQube token
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                echo "Cloning the GitHub repository..."
+                git branch: 'main', url: 'https://github.com/simonebinezer/CSAT.git'
+            }
+        }
+
+        stage('Setup PHP Environment') {
+            steps {
+                script {
+                    echo "Setting up PHP environment..."
+                    if (isUnix()) {
+                        sh 'php --version || sudo apt-get install php -y'
+                    } else {
+                        bat 'php --version || echo "Please install PHP on your Windows machine and add it to PATH"'
+                    }
+                }
+            }
+        }
+
+        stage('Build & SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') { // Matches the SonarQube instance name in Jenkins
+                    echo "Starting SonarQube analysis..."
+                    bat """
+                        sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+                                      -Dsonar.projectName="CSAT_Code" \
+                                      -Dsonar.projectVersion="1.0" \
+                                      -Dsonar.sources=. \
+                                      -Dsonar.host.url="${SONAR_HOST_URL}" \
+                                      -Dsonar.login=${SONAR_TOKEN}
+                    """
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 60, unit: 'MINUTES') {
+                    script {
+                        echo "Checking SonarQube Quality Gate status..."
+                        def qg = waitForQualityGate()
+                        while (qg.status == 'IN_PROGRESS') {
+                            echo "SonarQube Quality Gate still in progress..."
+                            sleep(30) // Wait 30 seconds before retrying
+                            qg = waitForQualityGate() // Recheck the status
+                        }
+                        if (qg.status != 'OK') {
+                            error "Pipeline failed due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Save to Local Folder') {
+            steps {
+                script {
+                    def localFolder = '/path/to/your/local/folder' // Replace with your desired local folder path
+                    echo "Saving repository files to local folder: ${localFolder}..."
+                    if (isUnix()) {
+                        sh "mkdir -p ${localFolder} && cp -r * ${localFolder}"
+                    } else {
+                        bat """
+                            if not exist "${localFolder}" mkdir "${localFolder}"
+                            xcopy /s /e /y . "${localFolder}\\"
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
