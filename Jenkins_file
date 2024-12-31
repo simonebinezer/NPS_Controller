@@ -4,16 +4,16 @@ pipeline {
     environment {
         SONARQUBE_SCANNER_HOME = tool name: 'SonarQube_Scanner' // Matches the configured scanner tool in Jenkins
         SONAR_PROJECT_KEY = 'NPS_Controller'                // Unique identifier for the project
-        GITHUB_REPO = 'https://github.com/simonebinezer/CSAT'
-        SONAR_HOST_URL = 'http://localhost:9099'          // SonarQube server address
-        SONAR_TOKEN = credentials('CSAT_Code')         // Jenkins credentials storing the SonarQube token
+        GITHUB_REPO = 'https://github.com/simonebinezer/NPS_Controller'
+        SONAR_HOST_URL = 'http://18.237.49.246:9000'          // SonarQube server address
+        SONAR_TOKEN = credentials('Sonar_Token')         // Jenkins credentials storing the SonarQube token
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 echo "Cloning the GitHub repository..."
-                git branch: 'main', url: 'https://github.com/simonebinezer/CSAT.git'
+                git branch: 'main', url: ''
             }
         }
 
