@@ -68,7 +68,7 @@ pipeline {
         stage('Save to Local Folder') {
             steps {
                 script {
-                    def localFolder = 'C:\NPS_Controller' // Replace with your desired local folder path
+                    def localFolder = 'C:/NPS_Controller' // Replace with your desired local folder path
                     echo "Saving repository files to local folder: ${localFolder}..."
                     if (isUnix()) {
                         sh "mkdir -p ${localFolder} && cp -r * ${localFolder}"
