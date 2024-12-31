@@ -17,21 +17,24 @@ pipeline {
             }
         }
 
-        stage('Build & SonarQube Analysis') {
+        stage('Run SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') { // Matches the SonarQube instance name in Jenkins
-                    echo "Starting SonarQube analysis..."
-                    bat """
-                        sonar-scanner -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
-                                      -Dsonar.projectName="NPS_Controller" \
-                                      -Dsonar.projectVersion="1.0" \
-                                      -Dsonar.sources=. \
-                                      -Dsonar.host.url="${SONAR_HOST_URL}" \
-                                      -Dsonar.login=${SONAR_TOKEN}
-                    """
+                withSonarQubeEnv('SonarQube') {
+                    script {
+                        // Using Jenkins-managed SonarScanner
+                        def scannerHome = tool name: 'SonarQube_Scanner'
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.login=${SONAR_TOKEN} \
+                            -X
+                        """
+                    }
                 }
             }
         }
+    }
 
         stage('Quality Gate') {
             steps {
