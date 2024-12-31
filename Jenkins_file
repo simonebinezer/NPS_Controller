@@ -2,11 +2,10 @@ pipeline {
     agent any
 
     environment {
-        SONARQUBE_SCANNER_HOME = tool name: 'SonarQube_Scanner' // Matches the configured scanner tool in Jenkins
+        SONARQUBE_SCANNER_HOME = tool name: 'SonarQube_Scanner' // Matches configured scanner tool in Jenkins
         SONAR_PROJECT_KEY = 'NPS_Controller'                // Unique identifier for the project
-        GITHUB_REPO = 'https://github.com/simonebinezer/NPS_Controller'
-        SONAR_HOST_URL = 'http://18.237.49.246:9000'          // SonarQube server address
-        SONAR_TOKEN = credentials('Sonar_Token')         // Jenkins credentials storing the SonarQube token
+        SONAR_HOST_URL = 'http://18.237.49.246:9000'        // SonarQube server address
+        SONAR_TOKEN = credentials('Sonar_Token')            // Jenkins credentials storing the SonarQube token
     }
 
     stages {
@@ -19,12 +18,10 @@ pipeline {
 
         stage('Run SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
+                withSonarQubeEnv('SonarQube') { // Ensure 'SonarQube' matches your Jenkins configuration
                     script {
-                        // Using Jenkins-managed SonarScanner
-                        def scannerHome = tool name: 'SonarQube_Scanner'
                         sh """
-                            ${scannerHome}/bin/sonar-scanner \
+                            ${SONARQUBE_SCANNER_HOME}/bin/sonar-scanner \
                             -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                             -Dsonar.host.url=${SONAR_HOST_URL} \
                             -Dsonar.login=${SONAR_TOKEN} \
@@ -38,10 +35,13 @@ pipeline {
         stage('Save to Local Folder') {
             steps {
                 script {
-                    def localFolder = 'C:/NPS_Controller' // Replace with your desired local folder path
+                    def localFolder = "${env.WORKSPACE}/NPS_Controller" // Workspace-relative folder
                     echo "Saving repository files to local folder: ${localFolder}..."
                     if (isUnix()) {
-                        sh "mkdir -p ${localFolder} && cp -r * ${localFolder}"
+                        sh """
+                            mkdir -p ${localFolder}
+                            cp -r * ${localFolder}
+                        """
                     } else {
                         bat """
                             if not exist "${localFolder}" mkdir "${localFolder}"
@@ -50,6 +50,15 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed.'
+        }
+        failure {
+            echo 'Pipeline execution failed. Check the logs for details.'
         }
     }
 }
